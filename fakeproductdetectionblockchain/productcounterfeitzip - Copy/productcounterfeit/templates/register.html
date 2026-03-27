@@ -1,0 +1,202 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="retro-card">
+            <div class="retro-header">
+                <h3>📝 Register</h3>
+            </div>
+            <div class="card-body p-4">
+                <p class="text-muted mb-4">
+                    Create a consumer account to verify products. Manufacturers and vendors
+                    must request access from the admin team.
+                </p>
+                <form method="POST" id="registerForm" novalidate>
+                    <div class="mb-3">
+                        <label class="form-label">Email</label>
+                        <input type="email" class="form-control" id="email" name="email" required>
+                        <div class="invalid-feedback" id="email-error"></div>
+                        <small class="form-text text-muted">Must be a valid email format (example@domain.com)</small>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Username</label>
+                        <input type="text" class="form-control" id="username" name="username" required>
+                        <div class="invalid-feedback" id="username-error"></div>
+                        <small class="form-text text-muted">3-30 characters, letters, numbers, and underscores only</small>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Password</label>
+                        <input type="password" class="form-control" id="password" name="password" required>
+                        <div class="invalid-feedback" id="password-error"></div>
+                        <small class="form-text text-muted">
+                            Minimum 8 characters, must include uppercase, lowercase, numbers, and special characters (!@#$%^&*)
+                        </small>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Phone (optional)</label>
+                        <input type="text" class="form-control" id="phone" name="phone">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Organization (optional)</label>
+                        <input type="text" class="form-control" id="company_name" name="company_name">
+                    </div>
+                    <button type="submit" class="btn btn-retro btn-compact btn-action">Register</button>
+                </form>
+                <div class="text-center mt-3">
+                    <a href="{{ url_for('login') }}" class="text-decoration-none neon-text">
+                        Already have an account? Login here
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('registerForm');
+    const emailInput = document.getElementById('email');
+    const usernameInput = document.getElementById('username');
+    const passwordInput = document.getElementById('password');
+
+    // Email validation
+    function validateEmail(email) {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        return emailRegex.test(email);
+    }
+
+    // Username validation
+    function validateUsername(username) {
+        const usernameRegex = /^[a-zA-Z0-9_]{3,30}$/;
+        return usernameRegex.test(username);
+    }
+
+    // Password validation
+    function validatePassword(password) {
+        const minLength = password.length >= 8;
+        const hasUpperCase = /[A-Z]/.test(password);
+        const hasLowerCase = /[a-z]/.test(password);
+        const hasNumber = /[0-9]/.test(password);
+        const hasSpecialChar = /[!@#$%^&*]/.test(password);
+        
+        return {
+            valid: minLength && hasUpperCase && hasLowerCase && hasNumber && hasSpecialChar,
+            errors: {
+                minLength: !minLength,
+                hasUpperCase: !hasUpperCase,
+                hasLowerCase: !hasLowerCase,
+                hasNumber: !hasNumber,
+                hasSpecialChar: !hasSpecialChar
+            }
+        };
+    }
+
+    // Real-time validation
+    emailInput.addEventListener('blur', function() {
+        const email = emailInput.value.trim();
+        const errorDiv = document.getElementById('email-error');
+        
+        if (!email) {
+            emailInput.classList.add('is-invalid');
+            errorDiv.textContent = 'Email is required';
+        } else if (!validateEmail(email)) {
+            emailInput.classList.add('is-invalid');
+            errorDiv.textContent = 'Please enter a valid email address (example@domain.com)';
+        } else {
+            emailInput.classList.remove('is-invalid');
+            emailInput.classList.add('is-valid');
+        }
+    });
+
+    usernameInput.addEventListener('blur', function() {
+        const username = usernameInput.value.trim();
+        const errorDiv = document.getElementById('username-error');
+        
+        if (!username) {
+            usernameInput.classList.add('is-invalid');
+            errorDiv.textContent = 'Username is required';
+        } else if (username.length < 3 || username.length > 30) {
+            usernameInput.classList.add('is-invalid');
+            errorDiv.textContent = 'Username must be between 3 and 30 characters';
+        } else if (!validateUsername(username)) {
+            usernameInput.classList.add('is-invalid');
+            errorDiv.textContent = 'Username can only contain letters, numbers, and underscores';
+        } else {
+            usernameInput.classList.remove('is-invalid');
+            usernameInput.classList.add('is-valid');
+        }
+    });
+
+    passwordInput.addEventListener('blur', function() {
+        const password = passwordInput.value;
+        const errorDiv = document.getElementById('password-error');
+        const validation = validatePassword(password);
+        
+        if (!password) {
+            passwordInput.classList.add('is-invalid');
+            errorDiv.textContent = 'Password is required';
+        } else if (!validation.valid) {
+            passwordInput.classList.add('is-invalid');
+            const errors = [];
+            if (validation.errors.minLength) errors.push('at least 8 characters');
+            if (validation.errors.hasUpperCase) errors.push('an uppercase letter');
+            if (validation.errors.hasLowerCase) errors.push('a lowercase letter');
+            if (validation.errors.hasNumber) errors.push('a number');
+            if (validation.errors.hasSpecialChar) errors.push('a special character (!@#$%^&*)');
+            errorDiv.textContent = 'Password must contain: ' + errors.join(', ');
+        } else {
+            passwordInput.classList.remove('is-invalid');
+            passwordInput.classList.add('is-valid');
+        }
+    });
+
+    // Form submission validation
+    form.addEventListener('submit', function(e) {
+        let isValid = true;
+        
+        // Validate email
+        const email = emailInput.value.trim();
+        if (!email || !validateEmail(email)) {
+            emailInput.classList.add('is-invalid');
+            document.getElementById('email-error').textContent = email ? 
+                'Please enter a valid email address (example@domain.com)' : 'Email is required';
+            isValid = false;
+        }
+        
+        // Validate username
+        const username = usernameInput.value.trim();
+        if (!username || !validateUsername(username) || username.length < 3 || username.length > 30) {
+            usernameInput.classList.add('is-invalid');
+            document.getElementById('username-error').textContent = !username ? 
+                'Username is required' : 'Username must be 3-30 characters (letters, numbers, underscores only)';
+            isValid = false;
+        }
+        
+        // Validate password
+        const password = passwordInput.value;
+        const passwordValidation = validatePassword(password);
+        if (!password || !passwordValidation.valid) {
+            passwordInput.classList.add('is-invalid');
+            if (!password) {
+                document.getElementById('password-error').textContent = 'Password is required';
+            } else {
+                const errors = [];
+                if (passwordValidation.errors.minLength) errors.push('at least 8 characters');
+                if (passwordValidation.errors.hasUpperCase) errors.push('an uppercase letter');
+                if (passwordValidation.errors.hasLowerCase) errors.push('a lowercase letter');
+                if (passwordValidation.errors.hasNumber) errors.push('a number');
+                if (passwordValidation.errors.hasSpecialChar) errors.push('a special character (!@#$%^&*)');
+                document.getElementById('password-error').textContent = 'Password must contain: ' + errors.join(', ');
+            }
+            isValid = false;
+        }
+        
+        if (!isValid) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+    });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,200 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-10">
+        <!-- Hero Section -->
+        <div class="retro-card text-center mb-5">
+            <div class="card-body py-5">
+                <h1 class="display-4 neon-text mb-4">🛡️ Anti-Counterfeit System</h1>
+                <p class="lead mb-4">Protecting consumers from fake products through blockchain technology</p>
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <div class="feature-icon">🔍</div>
+                        <h5>Verify Products</h5>
+                        <p class="text-muted">Scan QR codes to verify product authenticity</p>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <div class="feature-icon">🔗</div>
+                        <h5>Blockchain Security</h5>
+                        <p class="text-muted">Tamper-proof verification using blockchain</p>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <div class="feature-icon">📱</div>
+                        <h5>Easy to Use</h5>
+                        <p class="text-muted">Upload images or scan with your camera</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Consumer Verification Section -->
+        <div class="retro-card mb-5">
+            <div class="retro-header">
+                <h3>🔍 Consumer Product Verification</h3>
+                <p class="text-muted mb-0">Verify the authenticity of your products instantly</p>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-8">
+                        <h5>How it Works:</h5>
+                        <ol class="list-group list-group-numbered">
+                            <li class="list-group-item d-flex justify-content-between align-items-start">
+                                <div class="ms-2 me-auto">
+                                    <div class="fw-bold">📷 Upload QR Code</div>
+                                    Take a photo of the QR code on your product or upload an existing image
+                                </div>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between align-items-start">
+                                <div class="ms-2 me-auto">
+                                    <div class="fw-bold">🔍 Instant Verification</div>
+                                    Our system analyzes the QR code and checks it against our blockchain database
+                                </div>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between align-items-start">
+                                <div class="ms-2 me-auto">
+                                    <div class="fw-bold">✅ Get Results</div>
+                                    Receive detailed information about your product's authenticity and safety
+                                </div>
+                            </li>
+                        </ol>
+                    </div>
+                    <div class="col-md-4 text-center">
+                        <div class="verification-preview">
+                            <div class="qr-placeholder mb-3">
+                                <div class="qr-code-demo">📱</div>
+                                <small class="text-muted">QR Code</small>
+                            </div>
+                            <a href="{{ url_for('customer_dashboard') }}" class="btn btn-retro btn-lg">
+                                🔍 Verify Your Product
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Features Section -->
+        <div class="row mb-5">
+            <div class="col-md-6 mb-4">
+                <div class="retro-card h-100">
+                    <div class="card-body">
+                        <h5 class="card-title">🛡️ Counterfeit Detection</h5>
+                        <p class="card-text">Our advanced system can detect fake products by verifying QR codes against our blockchain database. If a product isn't registered, it's likely counterfeit.</p>
+                        <ul class="list-unstyled">
+                            <li>✅ Blockchain verification</li>
+                            <li>✅ Product authenticity check</li>
+                            <li>✅ Expiry date validation</li>
+                            <li>✅ Manufacturer verification</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6 mb-4">
+                <div class="retro-card h-100">
+                    <div class="card-body">
+                        <h5 class="card-title">📱 Multiple Verification Methods</h5>
+                        <p class="card-text">Choose the verification method that works best for you. Upload images, use your camera, or enter QR codes manually.</p>
+                        <ul class="list-unstyled">
+                            <li>📷 Image upload</li>
+                            <li>📱 Camera scanning</li>
+                            <li>🔄 Real-time processing</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Business Users Section -->
+        <div class="retro-card">
+            <div class="retro-header">
+                <h3>🏢 For Business Users</h3>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4 text-center mb-3">
+                        <div class="business-card">
+                            <h5>🏭 Manufacturers</h5>
+                            <p class="text-muted">Register your products and generate QR codes</p>
+                            <a href="{{ url_for('login') }}" class="btn btn-outline-retro">Login as Manufacturer</a>
+                        </div>
+                    </div>
+                    <div class="col-md-4 text-center mb-3">
+                        <div class="business-card">
+                            <h5>🏪 Vendors</h5>
+                            <p class="text-muted">Manage inventory and verify products</p>
+                            <a href="{{ url_for('login') }}" class="btn btn-outline-retro">Login as Vendor</a>
+                        </div>
+                    </div>
+                    <div class="col-md-4 text-center mb-3">
+                        <div class="business-card">
+                            <h5>👤 New User?</h5>
+                            <p class="text-muted">Register for a business account</p>
+                            <a href="{{ url_for('register') }}" class="btn btn-outline-retro">Register Account</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.feature-icon {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+}
+
+.verification-preview {
+    background: rgba(0, 255, 255, 0.05);
+    border-radius: 10px;
+    padding: 2rem;
+}
+
+.qr-placeholder {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    padding: 2rem;
+    border: 2px dashed rgba(0, 255, 255, 0.3);
+}
+
+.qr-code-demo {
+    font-size: 4rem;
+    margin-bottom: 0.5rem;
+}
+
+.business-card {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 10px;
+    padding: 1.5rem;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.btn-outline-retro {
+    border: 2px solid var(--retro-cyan);
+    color: var(--retro-cyan);
+    background: transparent;
+    transition: all 0.3s ease;
+}
+
+.btn-outline-retro:hover {
+    background: var(--retro-cyan);
+    color: #000;
+    transform: translateY(-2px);
+}
+
+.list-group-item {
+    background: rgba(255, 255, 255, 0.8);
+    border: 1px solid rgba(0, 255, 255, 0.2);
+    color: #000;
+}
+
+.list-group-item:hover {
+    background: rgba(0, 255, 255, 0.1);
+}
+</style>
+{% endblock %}
+

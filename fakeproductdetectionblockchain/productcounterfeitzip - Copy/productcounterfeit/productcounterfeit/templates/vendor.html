@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vendor Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+<body>
+    {% include 'base.html' %}
+    
+    <div class="container">
+        <h1>Vendor Dashboard</h1>
+        
+        <h2>Available Products</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Description</th>
+                    <th>Manufacturer</th>
+                    <th>Batch Number</th>
+                    <th>Manufacturing Date</th>
+                    <th>Expiry Date</th>
+                    <th>QR Code</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for product in products %}
+                <tr>
+                    <td>{{ product.name }}</td>
+                    <td>{{ product.description }}</td>
+                    <td>{{ product.manufacturer_name }}</td>
+                    <td>{{ product.batch_number }}</td>
+                    <td>{{ product.manufacturing_date }}</td>
+                    <td>{{ product.expiry_date }}</td>
+                    <td>
+                        <img src="{{ product.qr_code }}" alt="QR Code" width="50" height="50">
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <h2>Your Inventory</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Manufacturer</th>
+                    <th>Purchase Date</th>
+                    <th>QR Code</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in inventory %}
+                <tr>
+                    <td>{{ item.name }}</td>
+                    <td>{{ item.manufacturer_name }}</td>
+                    <td>{{ item.purchase_date }}</td>
+                    <td>
+                        <img src="{{ item.qr_code }}" alt="QR Code" width="50" height="50">
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</body>
+</html>

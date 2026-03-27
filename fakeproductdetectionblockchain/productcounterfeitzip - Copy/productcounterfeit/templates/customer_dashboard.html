@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block title %}Consumer Dashboard{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1>Welcome to the Consumer Dashboard</h1>
+    <p>If you see this page after login, everything works.</p>
+    <p><a href="{{ url_for('consumer_login') }}">Log out (back to login)</a></p>
+</div>
+{% endblock %}

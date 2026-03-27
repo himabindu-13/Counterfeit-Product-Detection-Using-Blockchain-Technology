@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="retro-card text-center">
+            <div class="retro-header">
+                <h3>⚠️ Error</h3>
+            </div>
+            <div class="card-body p-4">
+                <h4 class="neon-text">{{ error }}</h4>
+                <p class="mt-3">Something went wrong. Please try again.</p>
+                <div class="mt-4">
+                    <a href="{{ url_for('index') }}" class="btn btn-retro me-2">Home</a>
+                    <a href="javascript:history.back()" class="btn btn-retro">Go Back</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

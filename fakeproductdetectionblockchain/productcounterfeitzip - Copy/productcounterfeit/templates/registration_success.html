@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="retro-card">
+            <div class="retro-header">
+                <h3>✅ Registration Successful!</h3>
+            </div>
+            <div class="card-body p-4">
+                <div class="alert alert-success">
+                    <h5 class="mb-3">Welcome, {{ username }}!</h5>
+                    <p class="mb-2">Your account has been successfully created.</p>
+                </div>
+                
+                <div class="registration-details">
+                    <div class="detail-card mb-3">
+                        <label class="form-label fw-bold">Your Customer ID:</label>
+                        <div class="customer-id-display">
+                            <code class="customer-id-value">{{ customer_id }}</code>
+                        </div>
+                        <small class="text-muted d-block mt-2">
+                            Please save this Customer ID securely. You will need it for account verification and support.
+                        </small>
+                    </div>
+                </div>
+                
+                <div class="alert alert-info mt-4">
+                    <strong>Important:</strong> Keep your Customer ID and login credentials secure. Do not share them with anyone.
+                </div>
+                
+                <div class="text-center mt-4">
+                    <a href="{{ url_for('login') }}" class="btn btn-retro btn-compact btn-action">
+                        Continue to Login
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.customer-id-display {
+    display: flex;
+    align-items: center;
+    padding: 12px;
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(139, 92, 246, 0.1));
+    border: 2px solid var(--primary-emerald);
+    border-radius: 10px;
+    margin-top: 8px;
+}
+
+.customer-id-value {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--primary-emerald);
+    letter-spacing: 1px;
+    flex-grow: 1;
+    background: transparent;
+    border: none;
+}
+
+.detail-card {
+    padding: 16px;
+    background: var(--light-bg);
+    border-radius: 10px;
+    border-left: 4px solid var(--primary-emerald);
+}
+</style>
+
+{% endblock %}
+

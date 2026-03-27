@@ -1,0 +1,443 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-4">
+        <div class="retro-card">
+            <div class="retro-header">
+                <h3>🏭 Add Product</h3>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('add_product') }}">
+                    <div class="mb-3">
+                        <label class="form-label">Product Name *</label>
+                        <input type="text" class="form-control" name="name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Description</label>
+                        <textarea class="form-control" name="description" rows="3" placeholder="Product description..."></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Category *</label>
+                        <select class="form-control" name="category" id="categorySelect" required onchange="updateDatesBasedOnCategory()">
+                            <option value="">Select Category</option>
+                            <option value="Electronics">Electronics</option>
+                            <option value="Furniture">Furniture</option>
+                            <option value="Clothing & Textiles">Clothing & Textiles</option>
+                            <option value="Footwear">Footwear</option>
+                            <option value="Personal Care">Personal Care</option>
+                            <option value="Packaged Food & Beverages">Packaged Food & Beverages</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Batch Number *</label>
+                        <input type="text" class="form-control" name="batch_number" required placeholder="e.g., BATCH-001">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Manufacturing Date *</label>
+                        <input type="date" class="form-control" name="manufacturing_date" id="manufacturingDate" required>
+                        <small class="text-muted">Will be auto-filled based on category</small>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Expiry/Warranty Date *</label>
+                        <input type="date" class="form-control" name="expiry_date" id="expiryDate" required>
+                        <small class="text-muted">Will be auto-calculated based on category</small>
+                    </div>
+                    <button type="submit" class="btn btn-retro w-100 glow">🚀 Add Product & Generate QR</button>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-8">
+        <div class="retro-card">
+            <div class="retro-header">
+                <h3>📦 My Products ({{ products|length }})</h3>
+            </div>
+            <div class="card-body">
+                {% if products %}
+                <div class="row">
+                    {% for product in products %}
+                    <div class="col-md-6 mb-4">
+                        <div class="retro-card h-100">
+                            <div class="card-body">
+                                <h5 class="neon-text">
+                                    {% if product.category == 'Electronics' %}💡
+                                    {% elif product.category == 'Furniture' %}🪑
+                                    {% elif product.category == 'Clothing & Textiles' %}👕
+                                    {% elif product.category == 'Footwear' %}👟
+                                    {% elif product.category == 'Personal Care' %}🧴
+                                    {% elif product.category == 'Packaged Food & Beverages' %}🍎
+                                    {% else %}📦{% endif %}
+                                    {{ product.name }}
+                                </h5>
+                                <p class="mb-1"><strong>Category:</strong> {{ product.category or 'Not specified' }}</p>
+                                <p class="mb-1"><strong>Batch:</strong> {{ product.batch_number }}</p>
+                                <p class="mb-1"><strong>Manufactured:</strong> {{ product.manufacturing_date }}</p>
+                                <p class="mb-2"><strong>Expires:</strong> {{ product.expiry_date }}</p>
+                                
+                                {% if product.qr_code %}
+                                <div class="text-center mb-3">
+                                    <img src="{{ product.qr_code }}" alt="QR Code" class="img-fluid" style="max-width: 150px;">
+                                    <div class="mt-2">
+                                        <p class="small text-muted">QR Hash: {{ product.qr_code_hash[:16] }}...</p>
+                                        <button class="btn btn-sm btn-action-secondary" onclick="copyQRHash('{{ product.qr_code_hash }}')" 
+                                                style="background: #007bff; color: white; border: none; padding: 6px 12px; border-radius: 3px; cursor: pointer; font-size: 0.8rem; width: 150px;"
+                                                title="Copy Full QR Hash">
+                                            📋 Copy Hash
+                                        </button>
+                                    </div>
+                                </div>
+                                {% endif %}
+                                
+                                <div class="d-flex justify-content-between">
+                                    <button class="btn btn-retro btn-sm btn-action-secondary" 
+                                            onclick="viewProductDetails({{ product.id }})">
+                                        📋 Details
+                                    </button>
+                                    {% if product.qr_code %}
+                                    <a href="{{ url_for('download_qr', qr_hash=product.qr_code_hash) }}" 
+                                       class="btn btn-retro btn-sm btn-action-secondary">
+                                        📥 Download QR
+                                    </a>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="mt-2">
+                                    {% if product.blockchain_tx_hash %}
+                                    <span class="verified-badge">✓ On Blockchain</span>
+                                    {% else %}
+                                    <span class="not-verified-badge">✗ Not on Chain</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="text-center py-4">
+                    <h5 class="text-muted">No products yet</h5>
+                    <p class="text-muted">Add your first product using the form on the left</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Product Details Modal -->
+<div class="modal fade" id="productModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content retro-card">
+            <div class="modal-header retro-header">
+                <h5 class="modal-title">Product Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="productModalBody">
+                <!-- Product details will be loaded here -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-retro" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Category-based date generation
+function updateDatesBasedOnCategory() {
+    const categorySelect = document.getElementById('categorySelect');
+    const manufacturingDateInput = document.getElementById('manufacturingDate');
+    const expiryDateInput = document.getElementById('expiryDate');
+    
+    const selectedCategory = categorySelect.value;
+    const today = new Date();
+    
+    // Set manufacturing date to today
+    const todayString = today.toISOString().split('T')[0];
+    manufacturingDateInput.value = todayString;
+    
+    if (selectedCategory) {
+        let expiryDate = new Date(today);
+        
+        // Calculate expiry/warranty date based on category
+        switch(selectedCategory) {
+            case 'Electronics':
+                // Electronics: 2 years warranty
+                expiryDate.setFullYear(today.getFullYear() + 2);
+                break;
+            case 'Furniture':
+                // Furniture: 5 years warranty
+                expiryDate.setFullYear(today.getFullYear() + 5);
+                break;
+            case 'Clothing & Textiles':
+                // Clothing: 1 year warranty
+                expiryDate.setFullYear(today.getFullYear() + 1);
+                break;
+            case 'Footwear':
+                // Footwear: 1 year warranty
+                expiryDate.setFullYear(today.getFullYear() + 1);
+                break;
+            case 'Personal Care':
+                // Personal Care: 2 years expiry
+                expiryDate.setFullYear(today.getFullYear() + 2);
+                break;
+            case 'Packaged Food & Beverages':
+                // Food & Beverages: 1 year expiry
+                expiryDate.setFullYear(today.getFullYear() + 1);
+                break;
+            default:
+                // Default: 1 year
+                expiryDate.setFullYear(today.getFullYear() + 1);
+        }
+        
+        const expiryString = expiryDate.toISOString().split('T')[0];
+        expiryDateInput.value = expiryString;
+        
+        // Update the label text based on category
+        const label = expiryDateInput.previousElementSibling;
+        if (selectedCategory === 'Electronics' || selectedCategory === 'Furniture' || 
+            selectedCategory === 'Clothing & Textiles' || selectedCategory === 'Footwear') {
+            label.textContent = 'Warranty End Date *';
+        } else {
+            label.textContent = 'Expiry Date *';
+        }
+    }
+}
+
+// Initialize dates when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    // Set default manufacturing date to today
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('manufacturingDate').value = today;
+    
+    // Add event listener for category change
+    document.getElementById('categorySelect').addEventListener('change', updateDatesBasedOnCategory);
+    
+    // Add helpful tooltips for categories
+    const categorySelect = document.getElementById('categorySelect');
+    categorySelect.addEventListener('change', function() {
+        const selectedCategory = this.value;
+        const helpText = document.getElementById('categoryHelp') || document.createElement('small');
+        helpText.id = 'categoryHelp';
+        helpText.className = 'text-muted';
+        
+        switch(selectedCategory) {
+            case 'Electronics':
+                helpText.textContent = '💡 Electronics typically have 2-year warranty';
+                break;
+            case 'Furniture':
+                helpText.textContent = '🪑 Furniture typically has 5-year warranty';
+                break;
+            case 'Clothing & Textiles':
+                helpText.textContent = '👕 Clothing typically has 1-year warranty';
+                break;
+            case 'Footwear':
+                helpText.textContent = '👟 Footwear typically has 1-year warranty';
+                break;
+            case 'Personal Care':
+                helpText.textContent = '🧴 Personal care products typically expire in 2 years';
+                break;
+            case 'Packaged Food & Beverages':
+                helpText.textContent = '🍎 Food & beverages typically expire in 1 year';
+                break;
+            default:
+                helpText.textContent = '';
+        }
+        
+        // Insert help text after the select element
+        if (helpText.textContent && !document.getElementById('categoryHelp')) {
+            categorySelect.parentNode.appendChild(helpText);
+        } else if (helpText.textContent) {
+            document.getElementById('categoryHelp').textContent = helpText.textContent;
+        } else if (document.getElementById('categoryHelp')) {
+            document.getElementById('categoryHelp').remove();
+        }
+    });
+});
+
+function viewProductDetails(productId) {
+    fetch(`/api/product_details/${productId}`)
+        .then(response => response.json())
+        .then(product => {
+            const modalBody = document.getElementById('productModalBody');
+            modalBody.innerHTML = `
+                <div class="row">
+                    <div class="col-md-6">
+                        <h5>${product.name}</h5>
+                        <p><strong>Category:</strong> ${product.category || 'Not specified'}</p>
+                        <p><strong>Description:</strong> ${product.description || 'N/A'}</p>
+                        <p><strong>Batch Number:</strong> ${product.batch_number}</p>
+                        <p><strong>Manufacturer:</strong> ${product.manufacturer_name}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <p><strong>Manufacturing Date:</strong> ${product.manufacturing_date}</p>
+                        <p><strong>Expiry Date:</strong> ${product.expiry_date}</p>
+                        <p><strong>Created:</strong> ${product.created_at}</p>
+                        <p><strong>QR Hash:</strong> 
+                            <small class="text-muted">${product.qr_code_hash || 'Not generated'}</small>
+                            ${product.qr_code_hash ? `
+                            <button class="btn btn-sm btn-action-secondary ml-2" onclick="copyQRHash('${product.qr_code_hash}')" 
+                                    style="background: #007bff; color: white; border: none; padding: 6px 12px; border-radius: 3px; cursor: pointer; font-size: 0.8rem; width: 150px;"
+                                    title="Copy QR Hash">
+                                📋 Copy Hash
+                            </button>
+                            ` : ''}
+                        </p>
+                    </div>
+                </div>
+                ${product.qr_code ? `
+                <div class="text-center mt-3">
+                    <h6>QR Code</h6>
+                    <img src="${product.qr_code}" alt="QR Code" class="img-fluid" style="max-width: 200px;">
+                    <div class="mt-2">
+                        <a href="/download_qr/${product.qr_code_hash}" class="btn btn-retro btn-sm btn-action-secondary">
+                            📥 Download QR Code
+                        </a>
+                    </div>
+                </div>
+                ` : ''}
+                ${product.blockchain_tx_hash ? `
+                <div class="mt-3 p-3" style="background: rgba(0, 255, 0, 0.1); border-left: 4px solid var(--retro-green);">
+                    <span class="verified-badge">✓ Registered on Blockchain</span>
+                    <p class="mb-0 mt-1"><small>TX Hash: ${product.blockchain_tx_hash}</small></p>
+                </div>
+                ` : `
+                <div class="mt-3 p-3" style="background: rgba(255, 0, 255, 0.1); border-left: 4px solid var(--retro-magenta);">
+                    <span class="not-verified-badge">✗ Not on Blockchain</span>
+                    <p class="mb-0 mt-1"><small>This product is not registered on blockchain.</small></p>
+                </div>
+                `}
+            `;
+            new bootstrap.Modal(document.getElementById('productModal')).show();
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error loading product details');
+        });
+}
+
+// Form validation
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.querySelector('form');
+    form.addEventListener('submit', function(e) {
+        const manufacturingDate = new Date(form.manufacturing_date.value);
+        const expiryDate = new Date(form.expiry_date.value);
+        
+        if (expiryDate <= manufacturingDate) {
+            e.preventDefault();
+            alert('Expiry date must be after manufacturing date!');
+        }
+    });
+});
+
+function copyQRHash(qrHash) {
+    if (navigator.clipboard && window.isSecureContext) {
+        // Use the modern Clipboard API
+        navigator.clipboard.writeText(qrHash).then(function() {
+            showCopySuccess();
+        }).catch(function(err) {
+            console.error('Failed to copy: ', err);
+            fallbackCopyTextToClipboard(qrHash);
+        });
+    } else {
+        // Fallback for older browsers
+        fallbackCopyTextToClipboard(qrHash);
+    }
+}
+
+function fallbackCopyTextToClipboard(text) {
+    const textArea = document.createElement("textarea");
+    textArea.value = text;
+    
+    // Avoid scrolling to bottom
+    textArea.style.top = "0";
+    textArea.style.left = "0";
+    textArea.style.position = "fixed";
+    textArea.style.opacity = "0";
+    
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+    
+    try {
+        const successful = document.execCommand('copy');
+        if (successful) {
+            showCopySuccess();
+        } else {
+            showCopyError();
+        }
+    } catch (err) {
+        console.error('Fallback: Oops, unable to copy', err);
+        showCopyError();
+    }
+    
+    document.body.removeChild(textArea);
+}
+
+function showCopySuccess() {
+    // Create a temporary success message
+    const successMsg = document.createElement('div');
+    successMsg.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: #28a745;
+        color: white;
+        padding: 15px 20px;
+        border-radius: 5px;
+        z-index: 10000;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+    `;
+    successMsg.textContent = '✅ QR Hash copied to clipboard!';
+    document.body.appendChild(successMsg);
+    
+    // Remove after 3 seconds
+    setTimeout(() => {
+        successMsg.remove();
+    }, 3000);
+}
+
+function showCopyError() {
+    // Create a temporary error message
+    const errorMsg = document.createElement('div');
+    errorMsg.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: #dc3545;
+        color: white;
+        padding: 15px 20px;
+        border-radius: 5px;
+        z-index: 10000;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+    `;
+    errorMsg.textContent = '❌ Failed to copy QR Hash';
+    document.body.appendChild(errorMsg);
+    
+    // Remove after 3 seconds
+    setTimeout(() => {
+        errorMsg.remove();
+    }, 3000);
+}
+</script>
+
+<style>
+.retro-card {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.retro-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 0 25px var(--retro-cyan);
+}
+
+.img-fluid {
+    border: 2px solid var(--retro-cyan);
+    border-radius: 5px;
+    padding: 5px;
+    background: white;
+}
+</style>
+{% endblock %}

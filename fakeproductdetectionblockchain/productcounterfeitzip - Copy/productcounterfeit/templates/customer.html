@@ -1,0 +1,578 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-10">
+        <div class="retro-card">
+            <div class="retro-header">
+                <h3>🔍 Consumer Product Verification</h3>
+                <p class="text-muted mb-0">Verify the authenticity of your products</p>
+            </div>
+            <div class="card-body">
+                <!-- Verification Methods Tabs -->
+                <ul class="nav nav-tabs mb-4" id="verificationTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="upload-tab" data-bs-toggle="tab" data-bs-target="#upload" type="button" role="tab">
+                            📷 Upload QR Image
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="camera-tab" data-bs-toggle="tab" data-bs-target="#camera" type="button" role="tab">
+                            📱 Use Camera
+                        </button>
+                    </li>
+                </ul>
+
+                <div class="tab-content" id="verificationTabContent">
+                    <!-- Upload QR Image Tab -->
+                    <div class="tab-pane fade show active" id="upload" role="tabpanel">
+                        <div class="text-center">
+                            <h5 class="mb-3">📷 Upload QR Code Image</h5>
+                            <p class="text-muted mb-4">Take a photo of the QR code or upload an existing image</p>
+                            
+                            <div class="upload-area" id="uploadArea">
+                                <div class="upload-content">
+                                    <i class="fas fa-cloud-upload-alt fa-3x text-muted mb-3"></i>
+                                    <h6>Drag & Drop QR Image Here</h6>
+                                    <p class="text-muted">or click to browse</p>
+                                    <input type="file" id="qrImageInput" accept="image/*" style="display: none;">
+                                    <button class="btn btn-retro btn-compact btn-sm" onclick="document.getElementById('qrImageInput').click()">
+                                        Choose File
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <div id="imagePreview" class="mt-3" style="display: none;">
+                                <img id="previewImg" src="" alt="QR Preview" style="max-width: 200px; max-height: 200px;">
+                                <div class="mt-2">
+                                    <button class="btn btn-retro btn-compact btn-sm btn-action" onclick="processUploadedImage()">
+                                        🔍 Verify This QR Code
+                                    </button>
+                                    <button class="btn btn-outline-secondary btn-sm ms-2" onclick="clearImage()">
+                                        Clear
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    
+
+                    <!-- Camera Tab -->
+                    <div class="tab-pane fade" id="camera" role="tabpanel">
+                        <div class="text-center">
+                            <h5 class="mb-3">📱 Use Camera</h5>
+                            <p class="text-muted mb-4">Scan QR code directly using your device camera</p>
+                            
+                            <div id="cameraContainer">
+                                <video id="cameraVideo" width="300" height="200" style="display: none;" playsinline muted></video>
+                                <canvas id="cameraCanvas" width="300" height="200" style="display: none;"></canvas>
+                                <!-- Fallback mobile camera capture when getUserMedia is unavailable -->
+                                <input id="cameraCaptureInput" type="file" accept="image/*" capture="environment" style="display:none;" />
+                                
+                                <div id="cameraControls">
+                                    <button class="btn btn-retro btn-compact" id="startCameraBtn" onclick="startCamera()">
+                                        📷 Start Camera
+                                    </button>
+                                    <button class="btn btn-success btn-camera-compact" id="captureBtn" onclick="captureQR()" style="display: none;">
+                                        📸 Capture QR
+                                    </button>
+                                    <button class="btn btn-outline-secondary btn-camera-compact" id="stopCameraBtn" onclick="stopCamera()" style="display: none;">
+                                        ⏹️ Stop Camera
+                                    </button>
+                                </div>
+                                
+                                <div id="capturedImage" class="mt-3" style="display: none;">
+                                    <img id="capturedImg" src="" alt="Captured QR" style="max-width: 200px;">
+                                    <div class="mt-2">
+                                        <button class="btn btn-retro btn-compact btn-sm btn-action" onclick="processCapturedImage()">
+                                            🔍 Verify This QR Code
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Verification Results -->
+                <div id="result" class="mt-4" style="display: none;">
+                    <!-- Results will be displayed here -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.upload-area {
+    border: 2px dashed #ccc;
+    border-radius: 10px;
+    padding: 40px;
+    margin: 20px 0;
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.upload-area:hover {
+    border-color: var(--retro-cyan);
+    background-color: rgba(0, 255, 255, 0.05);
+}
+
+.upload-area.dragover {
+    border-color: var(--retro-cyan);
+    background-color: rgba(0, 255, 255, 0.1);
+}
+
+.upload-content {
+    pointer-events: none;
+}
+
+.verification-result {
+    border-radius: 10px;
+    padding: 20px;
+    margin: 20px 0;
+}
+
+.result-genuine {
+    background: linear-gradient(135deg, rgba(40, 167, 69, 0.1), rgba(40, 167, 69, 0.05));
+    border-left: 4px solid #28a745;
+}
+
+.result-fake {
+    background: linear-gradient(135deg, rgba(220, 53, 69, 0.1), rgba(220, 53, 69, 0.05));
+    border-left: 4px solid #dc3545;
+}
+
+.result-warning {
+    background: linear-gradient(135deg, rgba(255, 193, 7, 0.1), rgba(255, 193, 7, 0.05));
+    border-left: 4px solid #ffc107;
+}
+
+.product-details {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    padding: 15px;
+    margin: 15px 0;
+}
+
+.blockchain-info {
+    background: rgba(0, 255, 255, 0.1);
+    border-radius: 8px;
+    padding: 15px;
+    margin: 15px 0;
+}
+
+.status-badge {
+    display: inline-block;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-weight: bold;
+    font-size: 14px;
+}
+
+.status-genuine {
+    background: #28a745;
+    color: white;
+}
+
+.status-fake {
+    background: #dc3545;
+    color: white;
+}
+
+.status-warning {
+    background: #ffc107;
+    color: #212529;
+}
+
+.status-expired {
+    background: #6c757d;
+    color: white;
+}
+
+/* Compact action buttons on verification page */
+.upload-area .btn-retro,
+#imagePreview .btn-retro,
+#cameraControls .btn-retro,
+#capturedImage .btn-retro {
+    display: inline-block;
+    width: 150px;           /* between 130–160px */
+    padding: 6px 12px;      /* reduced padding */
+    font-size: 0.85rem;     /* slightly smaller text */
+}
+
+/* Compact camera buttons */
+.btn-camera-compact {
+    width: 140px;
+    padding: 6px 12px;
+    font-size: 0.85rem;
+    display: inline-block;
+}
+
+/* Clear button – compact and centered */
+#imagePreview .btn-outline-secondary {
+    display: inline-block;
+    width: 85px;            /* between 70–90px */
+    padding: 6px 10px;
+    font-size: 0.8rem;
+    text-align: center;
+}
+</style>
+
+<script>
+let cameraStream = null;
+let capturedImageData = null;
+
+// File upload handling
+document.getElementById('qrImageInput').addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            document.getElementById('previewImg').src = e.target.result;
+            document.getElementById('imagePreview').style.display = 'block';
+        };
+        reader.readAsDataURL(file);
+    }
+});
+
+// Drag and drop handling
+const uploadArea = document.getElementById('uploadArea');
+uploadArea.addEventListener('dragover', function(e) {
+    e.preventDefault();
+    uploadArea.classList.add('dragover');
+});
+
+uploadArea.addEventListener('dragleave', function(e) {
+    e.preventDefault();
+    uploadArea.classList.remove('dragover');
+});
+
+uploadArea.addEventListener('drop', function(e) {
+    e.preventDefault();
+    uploadArea.classList.remove('dragover');
+    
+    const files = e.dataTransfer.files;
+    if (files.length > 0) {
+        const file = files[0];
+        if (file.type.startsWith('image/')) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                document.getElementById('previewImg').src = e.target.result;
+                document.getElementById('imagePreview').style.display = 'block';
+            };
+            reader.readAsDataURL(file);
+        }
+    }
+});
+
+uploadArea.addEventListener('click', function() {
+    document.getElementById('qrImageInput').click();
+});
+
+function clearImage() {
+    document.getElementById('imagePreview').style.display = 'none';
+    document.getElementById('qrImageInput').value = '';
+}
+
+function processUploadedImage() {
+    const img = document.getElementById('previewImg');
+    if (img.src) {
+        processQRImage(img.src);
+    }
+}
+
+// Camera functionality
+function startCamera() {
+    const constraints = { video: { facingMode: { ideal: 'environment' } }, audio: false };
+    navigator.mediaDevices.getUserMedia(constraints)
+        .then(function(stream) {
+            cameraStream = stream;
+            const video = document.getElementById('cameraVideo');
+            video.srcObject = stream;
+            video.style.display = 'block';
+            video.play();
+            
+            document.getElementById('startCameraBtn').style.display = 'none';
+            document.getElementById('captureBtn').style.display = 'inline-block';
+            document.getElementById('stopCameraBtn').style.display = 'inline-block';
+        })
+        .catch(function(err) {
+            // Fallback: trigger mobile camera capture input
+            const input = document.getElementById('cameraCaptureInput');
+            if (input) {
+                input.click();
+            } else {
+                alert('Error accessing camera: ' + err.message);
+            }
+        });
+}
+
+function stopCamera() {
+    if (cameraStream) {
+        cameraStream.getTracks().forEach(track => track.stop());
+        cameraStream = null;
+    }
+    
+    document.getElementById('cameraVideo').style.display = 'none';
+    document.getElementById('capturedImage').style.display = 'none';
+    document.getElementById('startCameraBtn').style.display = 'inline-block';
+    document.getElementById('captureBtn').style.display = 'none';
+    document.getElementById('stopCameraBtn').style.display = 'none';
+}
+
+function captureQR() {
+    const video = document.getElementById('cameraVideo');
+    const canvas = document.getElementById('cameraCanvas');
+    const ctx = canvas.getContext('2d');
+    
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    ctx.drawImage(video, 0, 0);
+    
+    capturedImageData = canvas.toDataURL('image/png');
+    document.getElementById('capturedImg').src = capturedImageData;
+    document.getElementById('capturedImage').style.display = 'block';
+    // Auto-process right after capture for smoother UX
+    processCapturedImage();
+}
+
+function processCapturedImage() {
+    if (capturedImageData) {
+        processQRImage(capturedImageData);
+    }
+}
+
+// Fallback: process image captured via mobile file input camera
+document.getElementById('cameraCaptureInput').addEventListener('change', function(e) {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function(evt) {
+        const dataUrl = evt.target.result;
+        // Show preview and process
+        document.getElementById('capturedImg').src = dataUrl;
+        document.getElementById('capturedImage').style.display = 'block';
+        processQRImage(dataUrl);
+    };
+    reader.readAsDataURL(file);
+});
+
+// QR Image Processing
+function processQRImage(imageData) {
+    showLoading('Processing QR code image...');
+    
+    // Convert image to base64 and send to backend for processing
+    fetch('/process_qr_image', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ image_data: imageData })
+    })
+    .then(response => response.json())
+    .then(data => {
+        hideLoading();
+        if (data.success) {
+            verifyProductWithHash(data.qr_hash);
+        } else {
+            showError('Failed to process QR code image: ' + data.message);
+        }
+    })
+    .catch(error => {
+        hideLoading();
+        showError('Error processing image: ' + error.message);
+    });
+}
+
+// Manual verification
+function verifyProduct() {
+    const qrInput = document.getElementById('qrInput');
+    const qrHash = qrInput.value.trim();
+    
+    if (!qrHash) {
+        alert('Please enter a QR code hash');
+        return;
+    }
+    
+    verifyProductWithHash(qrHash);
+}
+
+function testQR(qrHash) {
+    document.getElementById('qrInput').value = qrHash;
+    verifyProductWithHash(qrHash);
+}
+
+function verifyProductWithHash(qrHash) {
+    showLoading('Verifying product...');
+    console.log('Verifying QR hash:', qrHash); // Debug log
+    
+    fetch('/scan_qr', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ qr_data: qrHash })
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+    })
+    .then(data => {
+        hideLoading();
+        console.log('Verification response:', data); // Debug log
+        displayVerificationResult(data);
+    })
+    .catch(error => {
+        hideLoading();
+        console.error('Verification error:', error); // Debug log
+        showError('Error verifying product: ' + error.message);
+    });
+}
+
+function displayVerificationResult(data) {
+    const resultDiv = document.getElementById('result');
+    
+    if (data.success) {
+        const product = data.product;
+        const isExpired = new Date(product.expiry_date) < new Date();
+        const isGenuine = product.blockchain_verified;
+        
+        let resultClass = 'result-warning';
+        let statusClass = 'status-warning';
+        let statusText = '⚠️ Verification Warning';
+        let statusIcon = '⚠️';
+        
+        if (isGenuine && !isExpired) {
+            resultClass = 'result-genuine';
+            statusClass = 'status-genuine';
+            statusText = '✅ Genuine Product';
+            statusIcon = '✅';
+        } else if (!isGenuine) {
+            resultClass = 'result-fake';
+            statusClass = 'status-fake';
+            statusText = '❌ Potentially Fake';
+            statusIcon = '❌';
+        } else if (isExpired) {
+            resultClass = 'result-warning';
+            statusClass = 'status-expired';
+            statusText = '⏰ Product Expired';
+            statusIcon = '⏰';
+        }
+        
+        resultDiv.innerHTML = `
+            <div class="verification-result ${resultClass}">
+                <div class="text-center mb-3">
+                    <h4 class="${statusClass}">${statusIcon} ${statusText}</h4>
+                </div>
+                
+                <div class="product-details">
+                    <h5>📦 Product Information</h5>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>Name:</strong> ${product.name}</p>
+                            <p><strong>Category:</strong> ${product.category || 'Not specified'}</p>
+                            <p><strong>Manufacturer:</strong> ${product.manufacturer}</p>
+                            <p><strong>Batch Number:</strong> ${product.batch_number}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Manufacturing Date:</strong> ${product.manufacturing_date}</p>
+                            <p><strong>Expiry Date:</strong> ${product.expiry_date}</p>
+                            <p><strong>Description:</strong> ${product.description || 'No description available'}</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="blockchain-info">
+                    <h6>🔗 Blockchain Verification</h6>
+                    <p><strong>Status:</strong> 
+                        <span class="${product.blockchain_verified ? 'status-genuine' : 'status-fake'}">
+                            ${product.blockchain_verified ? '✓ Verified on Blockchain' : '✗ Not Found on Blockchain'}
+                        </span>
+                    </p>
+                    ${product.blockchain_tx_hash ? `
+                    <p><strong>Transaction Hash:</strong> <code>${product.blockchain_tx_hash}</code></p>
+                    ` : ''}
+                </div>
+                
+                <div class="mt-3">
+                    <h6>📋 Verification Summary</h6>
+                    <ul class="list-unstyled">
+                        <li>${product.blockchain_verified ? '✅' : '❌'} Blockchain Registration</li>
+                        <li>${isExpired ? '⚠️' : '✅'} Product Validity</li>
+                        <li>${product.qr_code_hash ? '✅' : '❌'} QR Code Integrity</li>
+                    </ul>
+                </div>
+                
+                ${!isGenuine ? `
+                <div class="alert alert-danger mt-3">
+                    <h6>⚠️ Warning</h6>
+                    <p>This product may be counterfeit. Please contact the manufacturer or report this to authorities.</p>
+                </div>
+                ` : ''}
+                
+                ${isExpired ? `
+                <div class="alert alert-warning mt-3">
+                    <h6>⏰ Product Expired</h6>
+                    <p>This product has passed its expiry date. Please check the product condition before use.</p>
+                </div>
+                ` : ''}
+            </div>
+        `;
+    } else {
+        resultDiv.innerHTML = `
+            <div class="verification-result result-fake">
+                <div class="text-center">
+                    <h4 class="status-fake">❌ Product Not Found</h4>
+                    <p class="mt-3">This QR code does not match any registered product in our system.</p>
+                    <div class="alert alert-danger mt-3">
+                        <h6>⚠️ Potential Counterfeit</h6>
+                        <p>This product appears to be fake or not registered. Please:</p>
+                        <ul class="text-start">
+                            <li>Verify you scanned the correct QR code</li>
+                            <li>Contact the retailer or manufacturer</li>
+                            <li>Report this to consumer protection authorities</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+    
+    resultDiv.style.display = 'block';
+    resultDiv.scrollIntoView({ behavior: 'smooth' });
+}
+
+function showLoading(message) {
+    const resultDiv = document.getElementById('result');
+    resultDiv.innerHTML = `
+        <div class="text-center">
+            <div class="spinner-border text-cyan" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <p class="mt-2">${message}</p>
+        </div>
+    `;
+    resultDiv.style.display = 'block';
+}
+
+function hideLoading() {
+    // Loading will be replaced by results
+}
+
+function showError(message) {
+    const resultDiv = document.getElementById('result');
+    resultDiv.innerHTML = `
+        <div class="verification-result result-fake">
+            <div class="text-center">
+                <h4 class="status-fake">❌ Error</h4>
+                <p class="mt-3">${message}</p>
+            </div>
+        </div>
+    `;
+    resultDiv.style.display = 'block';
+}
+</script>
+{% endblock %}

@@ -1,0 +1,334 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="retro-card">
+            <div class="retro-header">
+                <h3>👤 User Profile</h3>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="text-center">
+                            <div class="profile-avatar mb-3">
+                                <div class="avatar-circle" style="width: 120px; height: 120px; background: linear-gradient(45deg, var(--retro-cyan), var(--retro-magenta)); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto; font-size: 2rem;">
+                                    {{ user.username[0].upper() }}
+                                </div>
+                            </div>
+                            <h4 class="neon-text">{{ user.username }}</h4>
+                            <span class="role-badge">{{ user.role }}</span>
+                            <p class="text-muted mt-2">Member since {{ user.created_at[:10] }}</p>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-8">
+                        <form id="profileForm" onsubmit="updateProfile(event)">
+                            <div class="mb-3">
+                                <label class="form-label">Username</label>
+                                <input type="text" class="form-control" name="username" value="{{ user.username }}" required>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label class="form-label">Current Password *</label>
+                                <input type="password" class="form-control" name="current_password" required>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label class="form-label">New Password (leave blank to keep current)</label>
+                                <input type="password" class="form-control" name="new_password">
+                                <div class="form-text">Password must be at least 6 characters long</div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label class="form-label">Confirm New Password</label>
+                                <input type="password" class="form-control" name="confirm_password">
+                            </div>
+                            
+                            <div class="text-center">
+                                <button type="submit" class="btn btn-retro btn-compact btn-action">Update Profile</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Blockchain Status Card -->
+        <div class="retro-card mt-4">
+            <div class="retro-header">
+                <h3>⛓️ Blockchain Status</h3>
+            </div>
+            <div class="card-body">
+                <div id="blockchainStatus">
+                    <div class="text-center">
+                        <div class="spinner-border text-cyan" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <p>Checking blockchain connection...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- User Statistics -->
+        <div class="retro-card mt-4">
+            <div class="retro-header">
+                <h3>📊 User Statistics</h3>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    {% if user.role == 'manufacturer' %}
+                    <div class="col-md-4">
+                        <div class="stat-card">
+                            <h4 class="neon-text" id="productsCount">0</h4>
+                            <p>Products Created</p>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="stat-card">
+                            <h4 class="neon-text" id="blockchainCount">0</h4>
+                            <p>On Blockchain</p>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="stat-card">
+                            <h4 class="neon-text" id="qrCount">0</h4>
+                            <p>QR Codes Generated</p>
+                        </div>
+                    </div>
+                    {% elif user.role == 'vendor' %}
+                    <div class="col-md-4">
+                        <div class="stat-card">
+                            <h4 class="neon-text" id="purchasedCount">0</h4>
+                            <p>Products Purchased</p>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="stat-card">
+                            <h4 class="neon-text" id="inventoryCount">0</h4>
+                            <p>In Inventory</p>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="stat-card">
+                            <h4 class="neon-text" id="soldCount">0</h4>
+                            <p>Products Sold</p>
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="col-md-6">
+                        <div class="stat-card">
+                            <h4 class="neon-text" id="verifiedCount">0</h4>
+                            <p>Products Verified</p>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="stat-card">
+                            <h4 class="neon-text" id="scanCount">0</h4>
+                            <p>QR Codes Scanned</p>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function updateProfile(event) {
+    event.preventDefault();
+    
+    const form = event.target;
+    const formData = new FormData(form);
+    
+    // Validate password confirmation
+    const newPassword = formData.get('new_password');
+    const confirmPassword = formData.get('confirm_password');
+    
+    if (newPassword && newPassword !== confirmPassword) {
+        alert('New passwords do not match!');
+        return;
+    }
+    
+    if (newPassword && newPassword.length < 6) {
+        alert('New password must be at least 6 characters long!');
+        return;
+    }
+    
+    fetch('/profile/update', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Update statistics if provided
+            if (data.stats) {
+                updateStatistics(data.stats);
+            }
+            // Update blockchain status if provided
+            if (data.blockchain_status) {
+                updateBlockchainStatus(data.blockchain_status);
+            }
+            alert('Profile updated successfully!');
+            // Reload to show updated profile data
+            window.location.reload();
+        } else {
+            alert('Error: ' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error updating profile');
+    });
+}
+
+function loadBlockchainStatus() {
+    fetch('/blockchain/status')
+        .then(response => response.json())
+        .then(data => {
+            const statusDiv = document.getElementById('blockchainStatus');
+            
+            if (data.active && data.connected) {
+                statusDiv.innerHTML = `
+                    <div class="text-success">
+                        <h5>✅ Blockchain Connected</h5>
+                        <p><strong>Contract:</strong> ${data.contract_address ? data.contract_address.slice(0,20) + '...' : 'Not deployed'}</p>
+                        <p><strong>Block Number:</strong> ${data.block_number || 'N/A'}</p>
+                        <p><strong>Accounts Available:</strong> ${data.accounts.length}</p>
+                    </div>
+                `;
+            } else {
+                statusDiv.innerHTML = `
+                    <div class="text-danger">
+                        <h5>❌ Blockchain Not Connected</h5>
+                        <p>Make sure Ganache is running on http://localhost:7545</p>
+                        <p>Transactions will use demo hashes</p>
+                    </div>
+                `;
+            }
+        })
+        .catch(error => {
+            console.error('Error loading blockchain status:', error);
+            document.getElementById('blockchainStatus').innerHTML = `
+                <div class="text-warning">
+                    <h5>⚠️ Error Checking Blockchain</h5>
+                    <p>Could not connect to blockchain service</p>
+                </div>
+            `;
+        });
+}
+
+function loadUserStats() {
+    const role = '{{ user.role }}';
+    
+    if (role === 'manufacturer') {
+        document.getElementById('productsCount').textContent = '{{ stats.total_products or 0 }}';
+        document.getElementById('blockchainCount').textContent = '{{ stats.blockchain_products or 0 }}';
+        document.getElementById('qrCount').textContent = '{{ stats.qr_codes or 0 }}';
+    } else if (role === 'vendor') {
+        document.getElementById('purchasedCount').textContent = '{{ stats.products_purchased or 0 }}';
+        document.getElementById('inventoryCount').textContent = '0';
+        document.getElementById('soldCount').textContent = '0';
+    } else {
+        document.getElementById('verifiedCount').textContent = '{{ stats.verified_count or 0 }}';
+        document.getElementById('scanCount').textContent = '{{ stats.scan_count or 0 }}';
+    }
+}
+
+function updateStatistics(stats) {
+    const role = '{{ user.role }}';
+    
+    if (role === 'manufacturer') {
+        if (stats.total_products !== undefined) {
+            document.getElementById('productsCount').textContent = stats.total_products;
+        }
+        if (stats.blockchain_products !== undefined) {
+            document.getElementById('blockchainCount').textContent = stats.blockchain_products;
+        }
+        if (stats.qr_codes !== undefined) {
+            document.getElementById('qrCount').textContent = stats.qr_codes;
+        }
+    } else if (role === 'vendor') {
+        if (stats.products_purchased !== undefined) {
+            document.getElementById('purchasedCount').textContent = stats.products_purchased;
+        }
+    } else {
+        if (stats.verified_count !== undefined) {
+            document.getElementById('verifiedCount').textContent = stats.verified_count;
+        }
+        if (stats.scan_count !== undefined) {
+            document.getElementById('scanCount').textContent = stats.scan_count;
+        }
+    }
+}
+
+function updateBlockchainStatus(blockchainStatus) {
+    const statusDiv = document.getElementById('blockchainStatus');
+    
+    if (blockchainStatus.active && blockchainStatus.connected) {
+        statusDiv.innerHTML = `
+            <div class="text-success">
+                <h5>✅ Blockchain Connected</h5>
+                <p><strong>Contract:</strong> ${blockchainStatus.contract_address ? blockchainStatus.contract_address.slice(0,20) + '...' : 'Not deployed'}</p>
+                <p><strong>Block Number:</strong> ${blockchainStatus.block_number || 'N/A'}</p>
+                <p><strong>Accounts Available:</strong> ${blockchainStatus.accounts.length}</p>
+            </div>
+        `;
+    } else {
+        statusDiv.innerHTML = `
+            <div class="text-danger">
+                <h5>❌ Blockchain Not Connected</h5>
+                <p>Make sure Ganache is running on http://localhost:7545</p>
+                <p>Transactions will use demo hashes</p>
+            </div>
+        `;
+    }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    loadBlockchainStatus();
+    loadUserStats();
+});
+</script>
+
+<style>
+.profile-avatar {
+    margin-bottom: 1rem;
+}
+
+.avatar-circle {
+    width: 120px;
+    height: 120px;
+    background: linear-gradient(45deg, var(--retro-cyan), var(--retro-magenta));
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto;
+    font-size: 2rem;
+    font-weight: bold;
+    color: var(--dark-bg);
+}
+
+.stat-card {
+    padding: 1rem;
+}
+
+.stat-card h4 {
+    font-size: 2rem;
+    margin-bottom: 0.5rem;
+}
+
+.stat-card p {
+    color: var(--retro-cyan);
+    margin: 0;
+}
+
+.form-text {
+    color: var(--retro-magenta) !important;
+}
+</style>
+{% endblock %}

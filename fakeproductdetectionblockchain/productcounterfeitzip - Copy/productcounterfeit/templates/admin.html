@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="retro-card">
+            <div class="retro-header">
+                <h3>👨‍💼 Admin Dashboard</h3>
+            </div>
+            <div class="card-body">
+                <ul class="nav nav-tabs">
+                    <li class="nav-item">
+                        <a class="nav-link active" data-bs-toggle="tab" href="#users">Users</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" data-bs-toggle="tab" href="#products">Products</a>
+                    </li>
+                </ul>
+
+                <div class="tab-content mt-3">
+                    <div class="tab-pane fade show active" id="users">
+                        <div class="retro-card mb-4">
+                            <div class="card-body">
+                                <h5>Grant Platform Access</h5>
+                                <p class="text-muted small">
+                                    Use this form to create Manufacturer and Vendor accounts.
+                                </p>
+                                <form class="row g-3" method="POST" action="{{ url_for('admin_create_user') }}">
+                                    <div class="col-md-4">
+                                        <label class="form-label">Username</label>
+                                        <input type="text" class="form-control" name="username" required>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label">Email</label>
+                                        <input type="email" class="form-control" name="email">
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label">Password</label>
+                                        <input type="password" class="form-control" name="password" required>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label">Role</label>
+                                        <select class="form-select" name="role" required>
+                                            <option value="manufacturer">Manufacturer</option>
+                                            <option value="vendor">Vendor</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label">Organization</label>
+                                        <input type="text" class="form-control" name="company_name">
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label">Phone</label>
+                                        <input type="text" class="form-control" name="phone">
+                                    </div>
+                                    <div class="col-12 text-center">
+                                        <button type="submit" class="btn btn-retro btn-compact btn-sm btn-action">Create User</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table table-retro">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Username</th>
+                                        <th>Role</th>
+                                        <th>Created At</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for user in users %}
+                                    <tr>
+                                        <td>{{ user.id }}</td>
+                                        <td>{{ user.username }}</td>
+                                        <td><span class="role-badge">{{ user.role }}</span></td>
+                                        <td>{{ user.created_at }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    
+                    <div class="tab-pane fade" id="products">
+                        <div class="table-responsive">
+                            <table class="table table-retro">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Name</th>
+                                        <th>Manufacturer</th>
+                                        <th>Batch Number</th>
+                                        <th>Blockchain TX</th>
+                                        <th>Created At</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for product in products %}
+                                    <tr>
+                                        <td>{{ product.id }}</td>
+                                        <td>{{ product.name }}</td>
+                                        <td>{{ product.manufacturer_name }}</td>
+                                        <td>{{ product.batch_number }}</td>
+                                        <td>
+                                            <small class="text-muted">{{ product.blockchain_tx_hash[:20] }}...</small>
+                                        </td>
+                                        <td>{{ product.created_at }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

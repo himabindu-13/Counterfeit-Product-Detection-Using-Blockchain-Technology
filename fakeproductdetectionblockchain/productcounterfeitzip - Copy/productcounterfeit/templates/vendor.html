@@ -1,0 +1,1009 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="retro-card">
+            <div class="retro-header">
+                <h3>🏪 Vendor Dashboard</h3>
+            </div>
+            <div class="card-body">
+                <div class="row mb-4">
+                    <div class="col-md-3">
+                        <div class="retro-card text-center">
+                            <div class="card-body">
+                                <h4 class="neon-text">{{ products|length }}</h4>
+                                <p>Available Products</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="retro-card text-center">
+                            <div class="card-body">
+                                <h4 class="neon-text">{{ verified_products|default(0) }}</h4>
+                                <p>Verified Products</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="retro-card text-center">
+                            <div class="card-body">
+                                <h4 class="neon-text">{{ transactions|default(0) }}</h4>
+                                <p>Transactions</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="retro-card text-center">
+                            <div class="card-body">
+                                <h4 class="neon-text">{{ manufacturers|default(0) }}</h4>
+                                <p>Manufacturers</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <ul class="nav nav-tabs">
+                    <li class="nav-item">
+                        <a class="nav-link active" data-bs-toggle="tab" href="#available">Available Products</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" data-bs-toggle="tab" href="#purchased">My Inventory</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" data-bs-toggle="tab" href="#scan">Scan & Verify</a>
+                    </li>
+                </ul>
+
+                <div class="tab-content mt-3">
+                    <!-- Available Products Tab -->
+                    <div class="tab-pane fade show active" id="available">
+                        <div class="table-responsive">
+                            <table class="table table-retro">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Product Name</th>
+                                        <th>Manufacturer</th>
+                                        <th>Batch Number</th>
+                                        <th>Manufacturing Date</th>
+                                        <th>Expiry Date</th>
+                                        <th>Blockchain Status</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for product in products %}
+                                    <tr>
+                                        <td>{{ product.id }}</td>
+                                        <td>
+                                            <strong>{{ product.name }}</strong>
+                                            {% if product.description %}
+                                            <br><small class="text-muted">{{ product.description[:50] }}...</small>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <span class="role-badge">{{ product.manufacturer_name }}</span>
+                                        </td>
+                                        <td>{{ product.batch_number }}</td>
+                                        <td>{{ product.manufacturing_date }}</td>
+                                        <td>{{ product.expiry_date }}</td>
+                                        <td>
+                                            {% if product.blockchain_tx_hash %}
+                                            <span class="verified-badge">✓ On Blockchain</span>
+                                            {% else %}
+                                            <span class="not-verified-badge">✗ Not on Chain</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <button class="btn btn-retro btn-sm" 
+                                                    onclick="viewProductDetails({{ product.id }})">
+                                                📋 Details
+                                            </button>
+                                            <button class="btn btn-retro btn-sm" 
+                                                    onclick="purchaseProduct({{ product.id }})">
+                                                🛒 Purchase
+                                            </button>
+                                        </td>
+                                    </tr>
+                                    {% else %}
+                                    <tr>
+                                        <td colspan="8" class="text-center">No products available for purchase</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- My Inventory Tab -->
+<div class="tab-pane fade" id="purchased">
+    <div class="table-responsive">
+        <table class="table table-retro">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Product Name</th>
+                    <th>Manufacturer</th>
+                    <th>Batch Number</th>
+                    <th>Purchase Date</th>
+                    <th>QR Code</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="inventoryTable">
+                <tr>
+                    <td colspan="8" class="text-center py-4 text-muted">
+                        Loading your inventory...
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Scan & Verify Tab -->
+<div class="tab-pane fade" id="scan">
+    <div class="retro-card">
+        <div class="card-body text-center">
+            <h5 class="mb-3">🔍 Scan & Verify Product</h5>
+            <p class="text-muted">
+                Enter or paste the QR code hash below to verify authenticity.
+            </p>
+
+            <div class="input-group mb-3" style="max-width: 400px; margin: 0 auto;">
+                <input type="text" id="vendorQrInput" class="form-control" placeholder="Enter QR hash">
+                <button class="btn btn-retro btn-action-small" type="button" onclick="verifyProductAsVendor()">Verify</button>
+            </div>
+
+            <button class="btn btn-retro btn-sm btn-action-small mt-2" type="button" onclick="generateDemoQR()">
+                🎲 Generate Demo QR
+            </button>
+
+            <div id="vendorVerificationResult" class="mt-4" style="display:none;">
+                <!-- Verification result appears here -->
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<!-- Product Details Modal -->
+<div class="modal fade" id="productModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content retro-card">
+            <div class="modal-header retro-header">
+                <h5 class="modal-title">Product Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="productModalBody">
+                <!-- Product details will be loaded here -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-retro" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Purchase Confirmation Modal -->
+<div class="modal fade" id="purchaseModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content retro-card">
+            <div class="modal-header retro-header">
+                <h5 class="modal-title">Confirm Purchase</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to purchase this product?</p>
+                <div id="purchaseProductDetails"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-retro" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-retro" onclick="confirmPurchase()">Confirm Purchase</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.retro-card {
+    margin-bottom: 1rem;
+}
+
+.product-card {
+    background: rgba(0, 255, 255, 0.05);
+    border: 1px solid var(--retro-cyan);
+    padding: 1rem;
+    margin-bottom: 1rem;
+    transition: all 0.3s ease;
+}
+
+.product-card:hover {
+    background: rgba(0, 255, 255, 0.1);
+    transform: translateY(-2px);
+}
+
+.qr-display {
+    background: white;
+    padding: 10px;
+    border: 2px solid var(--retro-cyan);
+    display: inline-block;
+    margin: 10px 0;
+}
+
+.status-verified {
+    color: var(--retro-green);
+    font-weight: bold;
+}
+
+.status-pending {
+    color: var(--retro-yellow);
+    font-weight: bold;
+}
+
+.status-rejected {
+    color: var(--retro-magenta);
+    font-weight: bold;
+}
+</style>
+
+<script>
+let selectedProductId = null;
+
+function viewProductDetails(productId) {
+    fetch(`/api/product_details/${productId}`)
+        .then(response => response.json())
+        .then(product => {
+            const modalBody = document.getElementById('productModalBody');
+            modalBody.innerHTML = `
+                <div class="row">
+                    <div class="col-md-6">
+                        <h5>${product.name}</h5>
+                        <p><strong>Description:</strong> ${product.description || 'N/A'}</p>
+                        <p><strong>Manufacturer:</strong> ${product.manufacturer_name}</p>
+                        <p><strong>Batch Number:</strong> ${product.batch_number}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <p><strong>Manufacturing Date:</strong> ${product.manufacturing_date}</p>
+                        <p><strong>Expiry Date:</strong> ${product.expiry_date}</p>
+                        <p><strong>Created:</strong> ${product.created_at}</p>
+                        <p><strong>Blockchain TX:</strong> 
+                            <small class="text-muted">${product.blockchain_tx_hash || 'Not registered'}</small>
+                        </p>
+                    </div>
+                </div>
+                ${product.blockchain_tx_hash ? `
+                <div class="mt-3 p-3" style="background: rgba(0, 255, 0, 0.1); border-left: 4px solid var(--retro-green);">
+                    <span class="verified-badge">✓ Registered on Blockchain</span>
+                    <p class="mb-0 mt-1"><small>This product is securely registered on the blockchain and can be verified by customers.</small></p>
+                </div>
+                ` : `
+                <div class="mt-3 p-3" style="background: rgba(255, 0, 255, 0.1); border-left: 4px solid var(--retro-magenta);">
+                    <span class="not-verified-badge">✗ Not on Blockchain</span>
+                    <p class="mb-0 mt-1"><small>This product is not registered on blockchain. Customers cannot verify its authenticity.</small></p>
+                </div>
+                `}
+            `;
+            new bootstrap.Modal(document.getElementById('productModal')).show();
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error loading product details');
+        });
+}
+
+function purchaseProduct(productId) {
+    selectedProductId = productId;
+    
+    // Get product details for confirmation
+    fetch(`/api/product_details/${productId}`)
+        .then(response => response.json())
+        .then(product => {
+            const purchaseDetails = document.getElementById('purchaseProductDetails');
+            purchaseDetails.innerHTML = `
+                <div class="product-card">
+                    <strong>${product.name}</strong><br>
+                    <small>Batch: ${product.batch_number}</small><br>
+                    <small>Manufacturer: ${product.manufacturer_name}</small>
+                </div>
+            `;
+            new bootstrap.Modal(document.getElementById('purchaseModal')).show();
+        });
+}
+
+function confirmPurchase() {
+    if (!selectedProductId) return;
+    
+    fetch('/api/purchase_product', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+            product_id: selectedProductId,
+            vendor_id: {{ session.user_id|tojson }}
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Product purchased successfully!');
+            bootstrap.Modal.getInstance(document.getElementById('purchaseModal')).hide();
+            // Refresh the inventory tab
+            loadVendorInventory();
+        } else {
+            alert('Error purchasing product: ' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error purchasing product');
+    });
+}
+
+function verifyProductAsVendor() {
+    const qrInput = document.getElementById('vendorQrInput');
+    const resultDiv = document.getElementById('vendorVerificationResult');
+    
+    if (!qrInput.value) {
+        alert('Please enter a QR code');
+        return;
+    }
+    
+    fetch('/scan_qr', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ qr_data: qrInput.value })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            const product = data.product;
+            resultDiv.innerHTML = `
+                <div class="retro-card">
+                    <div class="card-body">
+                        <h5 class="text-success">✅ Genuine Product</h5>
+                        <div class="product-info">
+                            <strong>${product.name}</strong><br>
+                            <small>Manufacturer: ${product.manufacturer}</small><br>
+                            <small>Batch: ${product.batch_number}</small><br>
+                            <small>Manufactured: ${product.manufacturing_date}</small>
+                        </div>
+                        <div class="mt-3">
+                            <span class="verified-badge">Safe to Sell</span>
+                            <p class="mb-0 mt-1"><small>This product is verified and can be sold to customers.</small></p>
+                        </div>
+                    </div>
+                </div>
+            `;
+        } else {
+            resultDiv.innerHTML = `
+                <div class="retro-card">
+                    <div class="card-body">
+                        <h5 class="text-danger">❌ Suspected Counterfeit</h5>
+                        <div class="product-info" style="border-left-color: var(--retro-magenta);">
+                            <p><strong>Warning:</strong> This product is not registered in our system.</p>
+                            <p>Do not sell this product to customers.</p>
+                        </div>
+                        <div class="mt-3">
+                            <span class="not-verified-badge">Do Not Sell</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+        resultDiv.style.display = 'block';
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        resultDiv.innerHTML = `
+            <div class="retro-card">
+                <div class="card-body">
+                    <h5>⚠️ Verification Error</h5>
+                    <p>There was an error verifying the product. Please try again.</p>
+                </div>
+            </div>
+        `;
+        resultDiv.style.display = 'block';
+    });
+}
+
+function generateDemoQR() {
+    const demoQRs = [
+        'demo_qr_hash_manufacturer_1',
+        'demo_qr_hash_manufacturer_2', 
+        'demo_qr_hash_manufacturer_3'
+    ];
+    const randomQR = demoQRs[Math.floor(Math.random() * demoQRs.length)];
+    document.getElementById('vendorQrInput').value = randomQR;
+}
+
+
+function showQR(qrHash) {
+    // Create a modal-like popup with copy functionality
+    const modal = document.createElement('div');
+    modal.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.5);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 9999;
+    `;
+    
+    const content = document.createElement('div');
+    content.style.cssText = `
+        background: white;
+        padding: 30px;
+        border-radius: 10px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+        max-width: 500px;
+        width: 90%;
+        text-align: center;
+    `;
+    
+    content.innerHTML = `
+        <h4 style="margin-bottom: 20px; color: #333;">QR Code Hash</h4>
+        <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-bottom: 20px; word-break: break-all; font-family: monospace;">
+            ${qrHash}
+        </div>
+        <p style="margin-bottom: 20px; color: #666;">Customers can use this to verify product authenticity.</p>
+        <div style="display: flex; gap: 10px; justify-content: center;">
+            <button class="btn-action-secondary" onclick="copyQRHash('${qrHash}')" style="
+                background: #007bff;
+                color: white;
+                border: none;
+                padding: 6px 12px;
+                border-radius: 5px;
+                cursor: pointer;
+                font-size: 0.8rem;
+                width: 150px;
+            ">📋 Copy Hash</button>
+            <button onclick="this.closest('div').parentElement.remove()" style="
+                background: #6c757d;
+                color: white;
+                border: none;
+                padding: 10px 20px;
+                border-radius: 5px;
+                cursor: pointer;
+                font-size: 14px;
+            ">Close</button>
+        </div>
+    `;
+    
+    modal.appendChild(content);
+    document.body.appendChild(modal);
+    
+    // Close modal when clicking outside
+    modal.addEventListener('click', function(e) {
+        if (e.target === modal) {
+            modal.remove();
+        }
+    });
+}
+
+function copyQRHash(qrHash) {
+    if (navigator.clipboard && window.isSecureContext) {
+        // Use the modern Clipboard API
+        navigator.clipboard.writeText(qrHash).then(function() {
+            showCopySuccess();
+        }).catch(function(err) {
+            console.error('Failed to copy: ', err);
+            fallbackCopyTextToClipboard(qrHash);
+        });
+    } else {
+        // Fallback for older browsers
+        fallbackCopyTextToClipboard(qrHash);
+    }
+}
+
+function fallbackCopyTextToClipboard(text) {
+    const textArea = document.createElement("textarea");
+    textArea.value = text;
+    
+    // Avoid scrolling to bottom
+    textArea.style.top = "0";
+    textArea.style.left = "0";
+    textArea.style.position = "fixed";
+    textArea.style.opacity = "0";
+    
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+    
+    try {
+        const successful = document.execCommand('copy');
+        if (successful) {
+            showCopySuccess();
+        } else {
+            showCopyError();
+        }
+    } catch (err) {
+        console.error('Fallback: Oops, unable to copy', err);
+        showCopyError();
+    }
+    
+    document.body.removeChild(textArea);
+}
+
+function showCopySuccess() {
+    // Create a temporary success message
+    const successMsg = document.createElement('div');
+    successMsg.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: #28a745;
+        color: white;
+        padding: 15px 20px;
+        border-radius: 5px;
+        z-index: 10000;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+    `;
+    successMsg.textContent = '✅ QR Hash copied to clipboard!';
+    document.body.appendChild(successMsg);
+    
+    // Remove after 3 seconds
+    setTimeout(() => {
+        successMsg.remove();
+    }, 3000);
+}
+
+function showCopyError() {
+    // Create a temporary error message
+    const errorMsg = document.createElement('div');
+    errorMsg.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: #dc3545;
+        color: white;
+        padding: 15px 20px;
+        border-radius: 5px;
+        z-index: 10000;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+    `;
+    errorMsg.textContent = '❌ Failed to copy QR Hash';
+    document.body.appendChild(errorMsg);
+    
+    // Remove after 3 seconds
+    setTimeout(() => {
+        errorMsg.remove();
+    }, 3000);
+}
+
+
+// Load inventory when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    loadVendorInventory();
+});
+
+// View Product Details
+function viewProductDetails(productId) {
+    console.log('Loading product details for:', productId);
+    
+    fetch(`/api/product_details/${productId}`)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.json();
+        })
+        .then(product => {
+            if (product.error) {
+                throw new Error(product.error);
+            }
+            
+            const modalBody = document.getElementById('productModalBody');
+            modalBody.innerHTML = `
+                <div class="row">
+                    <div class="col-md-6">
+                        <h5 class="neon-text">${product.name}</h5>
+                        <p><strong>Description:</strong> ${product.description || 'N/A'}</p>
+                        <p><strong>Manufacturer:</strong> ${product.manufacturer_name} (${product.company_name || 'N/A'})</p>
+                        <p><strong>Batch Number:</strong> ${product.batch_number}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <p><strong>Manufacturing Date:</strong> ${product.manufacturing_date}</p>
+                        <p><strong>Expiry Date:</strong> ${product.expiry_date}</p>
+                        <p><strong>Created:</strong> ${new Date(product.created_at).toLocaleDateString()}</p>
+                        <p><strong>QR Hash:</strong> 
+                            <small class="text-muted">${product.qr_code_hash ? product.qr_code_hash.substring(0, 20) + '...' : 'Not generated'}</small>
+                        </p>
+                    </div>
+                </div>
+                ${product.qr_code ? `
+                <div class="text-center mt-3">
+                    <h6>QR Code</h6>
+                    <img src="${product.qr_code}" alt="QR Code" class="img-fluid" style="max-width: 200px;">
+                    <div class="mt-2">
+                        <a href="/download_qr/${product.qr_code_hash}" class="btn btn-retro btn-sm btn-action-secondary">
+                            📥 Download QR Code
+                        </a>
+                    </div>
+                </div>
+                ` : ''}
+                ${product.blockchain_tx_hash ? `
+                <div class="mt-3 p-3" style="background: rgba(0, 255, 0, 0.1); border-left: 4px solid var(--retro-green);">
+                    <span class="verified-badge">✓ Registered on Blockchain</span>
+                    <p class="mb-0 mt-1">
+                        <small>TX Hash: ${product.blockchain_tx_hash.substring(0, 20)}...</small>
+                    </p>
+                    ${product.blockchain_info ? `
+                    <p class="mb-0 mt-1">
+                        <small>Block: ${product.blockchain_info.blockNumber || 'N/A'}</small>
+                    </p>
+                    ` : ''}
+                </div>
+                ` : `
+                <div class="mt-3 p-3" style="background: rgba(255, 0, 255, 0.1); border-left: 4px solid var(--retro-magenta);">
+                    <span class="not-verified-badge">✗ Not on Blockchain</span>
+                    <p class="mb-0 mt-1"><small>This product is not registered on blockchain.</small></p>
+                </div>
+                `}
+            `;
+            
+            // Show the modal
+            const productModal = new bootstrap.Modal(document.getElementById('productModal'));
+            productModal.show();
+        })
+        .catch(error => {
+            console.error('Error loading product details:', error);
+            alert('Error loading product details: ' + error.message);
+        });
+}
+
+// Purchase Product
+function purchaseProduct(productId) {
+    console.log('Purchasing product:', productId);
+    selectedProductId = productId;
+    
+    // Get product details for confirmation
+    fetch(`/api/product_details/${productId}`)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.json();
+        })
+        .then(product => {
+            if (product.error) {
+                throw new Error(product.error);
+            }
+            
+            const purchaseDetails = document.getElementById('purchaseProductDetails');
+            purchaseDetails.innerHTML = `
+                <div class="product-card">
+                    <strong>${product.name}</strong><br>
+                    <small>Batch: ${product.batch_number}</small><br>
+                    <small>Manufacturer: ${product.manufacturer_name}</small><br>
+                    <small>Manufactured: ${product.manufacturing_date}</small>
+                </div>
+                <div class="mt-2">
+                    ${product.blockchain_tx_hash ? 
+                    '<span class="verified-badge">✓ Blockchain Verified</span>' : 
+                    '<span class="not-verified-badge">✗ Not on Blockchain</span>'}
+                </div>
+            `;
+            
+            // Show the purchase confirmation modal
+            const purchaseModal = new bootstrap.Modal(document.getElementById('purchaseModal'));
+            purchaseModal.show();
+        })
+        .catch(error => {
+            console.error('Error loading product details for purchase:', error);
+            alert('Error loading product details: ' + error.message);
+        });
+}
+
+// Confirm Purchase
+function confirmPurchase() {
+    if (!selectedProductId) {
+        alert('No product selected');
+        return;
+    }
+    
+    console.log('Confirming purchase for product:', selectedProductId);
+    
+    // Show loading state
+    const confirmBtn = document.querySelector('#purchaseModal .modal-footer button:last-child');
+    const originalText = confirmBtn.innerHTML;
+    confirmBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"></span> Purchasing...';
+    confirmBtn.disabled = true;
+    
+    fetch('/api/purchase_product', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+            product_id: selectedProductId
+        })
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Network response was not ok');
+        }
+        return response.json();
+    })
+    .then(data => {
+        if (data.success) {
+            // Close the modal
+            const purchaseModal = bootstrap.Modal.getInstance(document.getElementById('purchaseModal'));
+            purchaseModal.hide();
+            
+            // Show success message
+            alert('Product purchased successfully!' + (data.tx_hash ? `\nTransaction: ${data.tx_hash.substring(0, 20)}...` : ''));
+            
+            // Reload the inventory
+            loadVendorInventory();
+            
+            // Refresh the page to update available products
+            setTimeout(() => {
+                window.location.reload();
+            }, 1000);
+            
+        } else {
+            throw new Error(data.message || 'Purchase failed');
+        }
+    })
+    .catch(error => {
+        console.error('Error purchasing product:', error);
+        alert('Error purchasing product: ' + error.message);
+    })
+    .finally(() => {
+        // Restore button state
+        confirmBtn.innerHTML = originalText;
+        confirmBtn.disabled = false;
+    });
+}
+
+// Load Vendor Inventory
+function loadVendorInventory() {
+    console.log('Loading vendor inventory...');
+    
+    fetch('/api/vendor_inventory')
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.json();
+        })
+        .then(inventory => {
+            const inventoryTable = document.getElementById('inventoryTable');
+            
+            if (inventory.length > 0) {
+                inventoryTable.innerHTML = inventory.map(item => `
+                    <tr>
+                        <td>${item.id}</td>
+                        <td>
+                            <strong>${item.name}</strong>
+                            ${item.description ? `<br><small class="text-muted">${item.description.substring(0, 50)}...</small>` : ''}
+                        </td>
+                        <td>${item.manufacturer_name}</td>
+                        <td>${item.batch_number}</td>
+                        <td>${new Date(item.purchase_date).toLocaleDateString()}</td>
+                        <td>
+                            ${item.qr_code ? `
+                            <div style="display: flex; align-items: center; gap: 5px;">
+                                <img src="${item.qr_code}" alt="QR Code" style="width: 50px; height: 50px; cursor: pointer;" 
+                                     onclick="showQR('${item.qr_code_hash}')" title="Click to view QR hash">
+                                <button class="btn btn-sm" onclick="copyQRHash('${item.qr_code_hash}')" 
+                                        style="background: #007bff; color: white; border: none; padding: 5px 8px; border-radius: 3px; cursor: pointer; font-size: 12px;"
+                                        title="Copy QR Hash">
+                                    📋
+                                </button>
+                            </div>
+                            ` : 'No QR'}
+                        </td>
+                        <td>
+                            <span class="verified-badge">In Stock</span>
+                        </td>
+                        <td>
+                            <button class="btn btn-retro btn-sm" onclick="sellProduct(${item.id})">
+                                💰 Sell
+                            </button>
+                            <button class="btn btn-retro btn-sm btn-action-secondary mt-1" onclick="viewProductDetails(${item.id})">
+                                📋 Details
+                            </button>
+                        </td>
+                    </tr>
+                `).join('');
+            } else {
+                inventoryTable.innerHTML = `
+                    <tr>
+                        <td colspan="8" class="text-center py-4">
+                            <div class="text-muted">
+                                <h5>No products in inventory</h5>
+                                <p>Purchase products from the "Available Products" tab</p>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            }
+        })
+        .catch(error => {
+            console.error('Error loading inventory:', error);
+            const inventoryTable = document.getElementById('inventoryTable');
+            inventoryTable.innerHTML = `
+                <tr>
+                    <td colspan="8" class="text-center text-danger py-4">
+                        Error loading inventory: ${error.message}
+                    </td>
+                </tr>
+            `;
+        });
+}
+
+// Sell Product
+function sellProduct(productId) {
+    if (confirm('Are you sure you want to mark this product as sold? This action cannot be undone.')) {
+        console.log('Selling product:', productId);
+        
+        fetch('/api/sell_product', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ 
+                product_id: productId
+            })
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.success) {
+                alert('Product marked as sold successfully!');
+                loadVendorInventory();
+            } else {
+                throw new Error(data.message || 'Sale failed');
+            }
+        })
+        .catch(error => {
+            console.error('Error selling product:', error);
+            alert('Error selling product: ' + error.message);
+        });
+    }
+}
+
+// Verify Product as Vendor
+function verifyProductAsVendor() {
+    const qrInput = document.getElementById('vendorQrInput');
+    const resultDiv = document.getElementById('vendorVerificationResult');
+    
+    if (!qrInput.value) {
+        alert('Please enter a QR code hash');
+        return;
+    }
+    
+    // Show loading state
+    resultDiv.innerHTML = `
+        <div class="text-center">
+            <div class="spinner-border text-cyan" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <p>Verifying product...</p>
+        </div>
+    `;
+    resultDiv.style.display = 'block';
+    
+    fetch('/scan_qr', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ qr_data: qrInput.value })
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Network response was not ok');
+        }
+        return response.json();
+    })
+    .then(data => {
+        if (data.success) {
+            const product = data.product;
+            resultDiv.innerHTML = `
+                <div class="retro-card">
+                    <div class="card-body">
+                        <h5 class="text-success">✅ Genuine Product</h5>
+                        <div class="product-info">
+                            <strong>${product.name}</strong><br>
+                            <small>Manufacturer: ${product.manufacturer}</small><br>
+                            <small>Batch: ${product.batch_number}</small><br>
+                            <small>Manufactured: ${product.manufacturing_date}</small><br>
+                            <small>Expires: ${product.expiry_date}</small>
+                        </div>
+                        <div class="mt-3">
+                            <span class="verified-badge">Safe to Sell</span>
+                            <p class="mb-0 mt-1">
+                                <small>This product is verified and can be sold to customers.</small>
+                            </p>
+                            ${product.blockchain_verified ? `
+                            <p class="mb-0 mt-1">
+                                <small>Blockchain Verified: ✓</small>
+                            </p>
+                            ` : ''}
+                        </div>
+                    </div>
+                </div>
+            `;
+        } else {
+            resultDiv.innerHTML = `
+                <div class="retro-card">
+                    <div class="card-body">
+                        <h5 class="text-danger">❌ Suspected Counterfeit</h5>
+                        <div class="product-info" style="border-left-color: var(--retro-magenta);">
+                            <p><strong>Warning:</strong> This product is not registered in our system.</p>
+                            <p>Do not sell this product to customers.</p>
+                        </div>
+                        <div class="mt-3">
+                            <span class="not-verified-badge">Do Not Sell</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+    })
+    .catch(error => {
+        console.error('Error verifying product:', error);
+        resultDiv.innerHTML = `
+            <div class="retro-card">
+                <div class="card-body">
+                    <h5>⚠️ Verification Error</h5>
+                    <p>There was an error verifying the product. Please try again.</p>
+                    <p class="text-muted">Error: ${error.message}</p>
+                </div>
+            </div>
+        `;
+    });
+}
+
+// Generate Demo QR
+function generateDemoQR() {
+    const demoQRs = [
+        'demo_qr_hash_manufacturer_001',
+        'demo_qr_hash_manufacturer_002', 
+        'demo_qr_hash_manufacturer_003',
+        'demo_qr_hash_batch_2024_001',
+        'demo_qr_hash_batch_2024_002'
+    ];
+    const randomQR = demoQRs[Math.floor(Math.random() * demoQRs.length)];
+    document.getElementById('vendorQrInput').value = randomQR;
+}
+
+// Initialize when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('Vendor dashboard loaded');
+    loadVendorInventory();
+    
+    // Add event listener for tab changes to refresh inventory
+    const tabEl = document.querySelector('a[data-bs-toggle="tab"]');
+    if (tabEl) {
+        tabEl.addEventListener('shown.bs.tab', function (e) {
+            if (e.target.getAttribute('href') === '#purchased') {
+                loadVendorInventory();
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

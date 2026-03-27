@@ -1,0 +1,64 @@
+╔══════════════════════════════════════════════════════════════╗
+║           PRODUCT VERIFICATION SYSTEM                         ║
+║           Quick Start Guide                                   ║
+╚══════════════════════════════════════════════════════════════╝
+
+┌─────────────────────────────────────────────────────────────┐
+│  EASIEST WAY TO START (Double-click one of these):          │
+└─────────────────────────────────────────────────────────────┘
+
+   1️⃣  run_app.bat
+       → For testing on your computer only
+       → Opens: http://localhost:5000
+       → Camera won't work on mobile phone
+
+   2️⃣  run_app_https.bat  ⭐ RECOMMENDED
+       → For testing on your phone too!
+       → Automatically sets up HTTPS
+       → Camera will work on mobile
+       → Shows you the URL to use on phone
+
+┌─────────────────────────────────────────────────────────────┐
+│  STEP-BY-STEP:                                               │
+└─────────────────────────────────────────────────────────────┘
+
+   📌 TESTING ON COMPUTER:
+   ───────────────────────
+   1. Double-click: run_app.bat
+   2. Wait for "Running on http://127.0.0.1:5000"
+   3. Open browser: http://localhost:5000
+   4. Login with: admin / admin123
+   5. Done! ✅
+
+   📱 TESTING ON PHONE:
+   ────────────────────
+   1. Double-click: run_app_https.bat
+   2. Note the IP address shown (e.g., 192.168.1.50)
+   3. On your phone (same WiFi):
+      - Open browser
+      - Go to: https://192.168.1.50:5000
+      - ACCEPT the security warning (safe for testing)
+   4. Login and camera will work! 📸
+
+┌─────────────────────────────────────────────────────────────┐
+│  WHAT TO DO AFTER STARTING:                                  │
+└─────────────────────────────────────────────────────────────┘
+
+   1. Login as Admin or Manufacturer
+   2. Create a product
+   3. Download the QR code
+   4. Scan with phone camera or Google Lens
+   5. See product details! 🎉
+
+┌─────────────────────────────────────────────────────────────┐
+│  NEED HELP?                                                  │
+└─────────────────────────────────────────────────────────────┘
+
+   → Read README_RUN.md for detailed instructions
+   → Make sure phone and computer are on same WiFi
+   → Accept certificate warning on phone (it's safe!)
+
+╔══════════════════════════════════════════════════════════════╗
+║  That's it! Just double-click run_app_https.bat to start!   ║
+╚══════════════════════════════════════════════════════════════╝
+
